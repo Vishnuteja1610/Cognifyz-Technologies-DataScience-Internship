@@ -1,142 +1,99 @@
 # Importing Libraries
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(readr)
-
-
-
-
-
-## Task 1: TABLE BOOKING AND ONLINE DELIVERY
-
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Load Dataset
-data <- read.csv("D:/Projects/Cognifyz Technologies - DS Internship/Dataset.csv")
+data = pd.read_csv("D:/Projects/Cognifyz Technologies - DS Internship/Dataset.csv")
 
 # View top 10 rows of the dataset
-head(data, 10)
+display(data.head(10))
 
 
-
-# Percentage of restaurants that offer table booking and online delivery
+# ----------------------------------------------------------
+# Task 1: TABLE BOOKING AND ONLINE DELIVERY
+# ----------------------------------------------------------
 
 # Total number of restaurants
-total_num_restaurants <- nrow(data)
+total_num_restaurants = len(data)
 
-# Percentage calculation
-table_booking_percentage <- sum(data$Has.Table.booking == 'Yes') / total_num_restaurants * 100
-online_delivery_percentage <- sum(data$Has.Online.delivery == 'Yes') / total_num_restaurants * 100
+# Percentage of restaurants that offer table booking and online delivery
+table_booking_percentage = (data['Has Table booking'].eq('Yes').sum() / total_num_restaurants) * 100
+online_delivery_percentage = (data['Has Online delivery'].eq('Yes').sum() / total_num_restaurants) * 100
 
-# Display results
-cat(sprintf("Percentage of restaurants that offer Table Booking: %.2f%%\n", table_booking_percentage))
-cat(sprintf("Percentage of restaurants that offer Online Delivery: %.2f%%\n", online_delivery_percentage))
-
+print(f"Percentage of restaurants that offer Table Booking: {table_booking_percentage:.2f}%")
+print(f"Percentage of restaurants that offer Online Delivery: {online_delivery_percentage:.2f}%")
 
 
 # Compare the average ratings of restaurants with table booking and those without
+avg_rating_with_table = data.loc[data['Has Table booking'] == 'Yes', 'Aggregate rating'].mean()
+avg_rating_without_table = data.loc[data['Has Table booking'] == 'No', 'Aggregate rating'].mean()
 
-
-avg_rating_with_table <- mean(data[data$Has.Table.booking == 'Yes', "Aggregate.rating"], na.rm = TRUE)
-avg_rating_without_table <- mean(data[data$Has.Table.booking == 'No', "Aggregate.rating"], na.rm = TRUE)
-
-# Display results
-cat(sprintf("Average rating with Table Booking: %.2f\n", avg_rating_with_table))
-cat(sprintf("Average rating without Table Booking: %.2f\n", avg_rating_without_table))
-
+print(f"Average rating with Table Booking: {avg_rating_with_table:.2f}")
+print(f"Average rating without Table Booking: {avg_rating_without_table:.2f}")
 
 
 # Analyze the availability of online delivery among restaurants with different price ranges
+def price_range(cost):
+    if cost < 500:
+        return 'Low'
+    elif 500 <= cost <= 1000:
+        return 'Medium'
+    else:
+        return 'High'
 
-# Select price ranges
-price_ranges <- ifelse(data$Average.Cost.for.two < 500, 'Low',
-                       ifelse(data$Average.Cost.for.two >= 500 & data$Average.Cost.for.two <= 1000, 'Medium', 'High'))
+data['Price Range Category'] = data['Average Cost for two'].apply(price_range)
 
-# Group by price range and online delivery availability
-online_delivery_by_price_range <- table(price_ranges, data$Has.Online.delivery)
-online_delivery_by_price_range <- prop.table(online_delivery_by_price_range, margin = 1)
+online_delivery_by_price_range = pd.crosstab(data['Price Range Category'], data['Has Online delivery'], normalize='index') * 100
+print("Online Delivery Availability by Price Range:\n", online_delivery_by_price_range)
 
-# Display results
-cat("Online Delivery Availability by Price Range:\n")
-print(online_delivery_by_price_range)
-
-# Create a bar plot to visualize online delivery availability by price range
-ggplot(data, aes(price_ranges, fill = Has.Online.delivery)) +
-  geom_bar() +
-  labs(title = "Online Delivery Availability by Price Range",
-       x = "Price Range",
-       y = "Count")
-
-
-
+# Bar plot
+plt.figure(figsize=(6,4))
+sns.countplot(data=data, x='Price Range Category', hue='Has Online delivery', palette='Set2')
+plt.title("Online Delivery Availability by Price Range")
+plt.xlabel("Price Range")
+plt.ylabel("Count")
+plt.show()
 
 
-## Task 2: PRICE RANGE ANALYSIS
-
-
-# Determine the most common price range among all the restaurants
+# ----------------------------------------------------------
+# Task 2: PRICE RANGE ANALYSIS
+# ----------------------------------------------------------
 
 # Most common price range among all the restaurants
-most_common_price_range <- names(sort(table(data$Price.range), decreasing = TRUE))[1]
-
-# Display result
-cat("Most Common Price Range: ", most_common_price_range, "\n")
-
+most_common_price_range = data['Price range'].mode()[0]
+print("Most Common Price Range:", most_common_price_range)
 
 # Calculate the average rating for each price range
+avg_rating_by_price_range = data.groupby('Price range')['Aggregate rating'].mean().reset_index()
+print("Average rating for each price range:\n", avg_rating_by_price_range.round(2))
 
-# Group by 'Price range' and calculate the average rating
-avg_rating_by_price_range <- aggregate(data$Aggregate.rating, by = list(data$Price.range), FUN = mean, na.rm = TRUE)
+# Identify the price range with the highest average rating
+highest_avg_rating_idx = avg_rating_by_price_range['Aggregate rating'].idxmax()
 
-# Rename the columns
-colnames(avg_rating_by_price_range) <- c("Price range", "Average rating")
-
-# Display result
-cat("Average rating for each price range:\n")
-print(round(avg_rating_by_price_range, 2))
-
-
-# Identify the color that represents the highest average rating among different price ranges
-
-# Find the price range with the highest average rating
-highest_avg_rating_color <- which.max(avg_rating_by_price_range$`Average rating`)
-
-# Create a bar plot
-barplot(avg_rating_by_price_range$`Average rating`, 
-        names.arg = avg_rating_by_price_range$`Price range`,
-        col = ifelse(1:length(avg_rating_by_price_range$`Price range`) == highest_avg_rating_color,
-                     "red", "blue"),
-        xlab = "Price Range",
-        ylab = "Average Rating",
-        main = "Average Rating by Price Range")
+# Bar plot
+plt.figure(figsize=(6,4))
+colors = ['red' if i == highest_avg_rating_idx else 'blue' for i in range(len(avg_rating_by_price_range))]
+plt.bar(avg_rating_by_price_range['Price range'], avg_rating_by_price_range['Aggregate rating'], color=colors)
+plt.xlabel("Price Range")
+plt.ylabel("Average Rating")
+plt.title("Average Rating by Price Range")
+plt.show()
 
 
+# ----------------------------------------------------------
+# Task 3: FEATURE ENGINEERING
+# ----------------------------------------------------------
 
+# Extract additional features: length of restaurant name and address
+data['Restaurant Name Length'] = data['Restaurant Name'].str.len()
+data['Address Length'] = data['Address'].str.len()
 
+display(data[['Restaurant Name', 'Restaurant Name Length', 'Address', 'Address Length']].head())
 
-## Task 3: FEATURE ENGINEERING
+# Create new binary features for table booking and online delivery
+data['Has Table Booking (Encoded)'] = data['Has Table booking'].map({'Yes': 1, 'No': 0})
+data['Has Online Delivery (Encoded)'] = data['Has Online delivery'].map({'Yes': 1, 'No': 0})
 
-
-# Extract additional features from the existing columns, such as the length of the restaurant name or address
-
-# Create a new column for the length of restaurant names
-data$`Restaurant Name Length` <- nchar(data$Restaurant.Name)
-
-# Create a new column for the length of restaurant addresses
-data$`Address Length` <- nchar(data$Address)
-
-# Display the updated DataFrame
-head(data)
-
-
-# Create new features like "Has Table Booking" or "Has Online Delivery" by encoding categorical variables
-
-# Create new columns
-data$`Has Table Booking` <- ifelse(data$Has.Table.booking == "Yes", 1, 0)
-data$`Has Online Delivery` <- ifelse(data$Has.Online.delivery == "Yes", 1, 0)
-
-# Display the updated DataFrame
-head(data)
-
-
-
+display(data.head())
