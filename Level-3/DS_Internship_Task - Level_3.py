@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 
 # Step 2: Load the dataset
 # Replace 'your_file.csv' with the path to your CSV file
-data = pd.read_csv("your_file.csv")
-
+df = pd.read_csv(r"C:\Users\91812\OneDrive\Desktop\cognifyz\Dataset .csv")
 # Step 3: Show the first 5 rows of the dataset
 print("First 5 rows of dataset:")
 display(data.head())
