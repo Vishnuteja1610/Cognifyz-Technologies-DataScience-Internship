@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load Dataset
-df = pd.read_csv(r"C:\Users\91812\OneDrive\Desktop\cognifyz\Dataset .csv")
+data = pd.read_csv(r"C:\Users\91812\OneDrive\Desktop\cognifyz\Dataset .csv")
 
 # View top 10 rows of the dataset
 display(data.head(10))
